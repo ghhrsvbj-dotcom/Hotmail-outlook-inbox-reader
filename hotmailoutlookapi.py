@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 from aiogram import Bot, Dispatcher, F, Router
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
@@ -191,10 +192,10 @@ def _parse_credentials(raw: Optional[str]) -> Optional[Dict[str, str]]:
 @router.message(CommandStart())
 async def handle_start(message: Message) -> None:
     await message.answer(
-        "Send the account string in the format:\n"
-        "`email|password|refresh_token|client_id`\n\n"
+        "Send the account string in the format:<br>"
+        "<code>email|password|refresh_token|client_id</code><br><br>"
         "Only Hotmail/Outlook addresses are accepted.",
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -231,7 +232,10 @@ async def run_bot() -> None:
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable is required to run the bot.")
 
-    bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode=ParseMode.HTML)
+    bot = Bot(
+        token=TELEGRAM_BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     dp = Dispatcher()
     dp.include_router(router)
 
