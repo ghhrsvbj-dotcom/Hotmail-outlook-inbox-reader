@@ -20,7 +20,7 @@ from functions.facebook import get_latest_facebook_otp
 # ----------------------------------------------------
 # 🔧 CONFIGURATION (env vars preferred)
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = "8213966935:AAGzXbDk1JGlTj2FH-ihho6DP0zcXo2Dkyg"
 DEFAULT_MESSAGE_COUNT = int(os.getenv("MESSAGE_COUNT", "5"))
 # ----------------------------------------------------
 
