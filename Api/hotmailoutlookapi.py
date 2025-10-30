@@ -146,8 +146,6 @@ def fetch_inbox_preview(
 ) -> str:
     """Fetch the most recent Facebook OTP message for the provided inbox."""
 
-    del message_count
-
     token_data = get_access_token(refresh_token, client_id, CLIENT_SECRET)
     access_token = token_data.get("access_token")
     if not access_token:
@@ -155,7 +153,10 @@ def fetch_inbox_preview(
 
     imap = connect_and_authenticate(email_addr, access_token)
     try:
-        inbox_text = get_latest_facebook_otp(imap)
+        inbox_text = get_latest_facebook_otp(
+            imap,
+            max_messages=max(1, message_count),
+        )
     finally:
         imap.logout()
 
