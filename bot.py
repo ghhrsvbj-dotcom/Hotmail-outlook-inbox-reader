@@ -15,7 +15,7 @@ from aiogram.types import Message
 from Api.hotmailoutlookapi import fetch_inbox_preview
 
 TELEGRAM_BOT_TOKEN = "8213966935:AAGzXbDk1JGlTj2FH-ihho6DP0zcXo2Dkyg"
-DEFAULT_MESSAGE_COUNT = int(os.getenv("MESSAGE_COUNT", "5"))
+DEFAULT_MESSAGE_COUNT = int(os.getenv("MESSAGE_COUNT", "40"))
 
 DATA_PATTERN = re.compile(
     r"(?P<email>[A-Za-z0-9._%+-]+@(hotmail|outlook)\.[A-Za-z0-9.-]+)\|"

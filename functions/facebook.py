@@ -9,7 +9,21 @@ import re
 from email.message import Message
 from typing import Optional
 
-_FB_CODE_PATTERN = re.compile(r"FB-\d{4,}")
+_FB_CODE_PATTERN = re.compile(r"\b(?:FB-)?(\d{4,8})\b")
+
+
+def _extract_otp(text: str) -> Optional[str]:
+    """Return the first plausible OTP code from the provided text."""
+
+    matches = list(_FB_CODE_PATTERN.finditer(text))
+    if not matches:
+        return None
+
+    for match in matches:
+        if match.group(0).startswith("FB-"):
+            return match.group(1)
+
+    return matches[0].group(1)
 
 
 def _decode_header_value(raw_value: Optional[str]) -> str:
@@ -60,8 +74,8 @@ def _message_to_text(msg: Message) -> str:
     return ""
 
 
-def get_latest_facebook_otp(imap: imaplib.IMAP4_SSL) -> str:
-    """Return the most recent OTP code from a Facebook email."""
+def get_latest_facebook_otp(imap: imaplib.IMAP4_SSL, *, max_messages: int = 20) -> str:
+    """Return the most recent OTP code from Facebook emails within the provided window."""
 
     status, _ = imap.select("INBOX")
     if status != "OK":
@@ -75,19 +89,23 @@ def get_latest_facebook_otp(imap: imaplib.IMAP4_SSL) -> str:
     if not message_ids:
         return "No Facebook OTP emails found."
 
-    latest_id = message_ids[-1]
-    status, msg_data = imap.fetch(latest_id, "(RFC822)")
-    if status != "OK" or not msg_data or not msg_data[0]:
-        return "Unable to fetch the latest Facebook email."
+    latest_subject = "(no subject)"
 
-    raw_email = msg_data[0][1]
-    msg = email.message_from_bytes(raw_email)
-    body_text = _message_to_text(msg)
+    for msg_id in reversed(message_ids[-max_messages:]):
+        status, msg_data = imap.fetch(msg_id, "(RFC822)")
+        if status != "OK" or not msg_data or not msg_data[0]:
+            continue
 
-    code_match = _FB_CODE_PATTERN.search(body_text)
-    if code_match:
-        return f"Latest Facebook OTP: {code_match.group(0)}"
+        raw_email = msg_data[0][1]
+        msg = email.message_from_bytes(raw_email)
+        subject = _decode_header_value(msg.get("Subject")) or "(no subject)"
+        if latest_subject == "(no subject)":
+            latest_subject = subject
 
-    subject = _decode_header_value(msg.get("Subject"))
-    fallback_info = subject or "(no subject)"
-    return f"Latest Facebook email found but no OTP detected. Subject: {fallback_info}"
+        body_text = _message_to_text(msg)
+
+        otp = _extract_otp(body_text) or _extract_otp(subject)
+        if otp:
+            return f"Latest Facebook OTP: {otp}"
+
+    return f"Latest Facebook email found but no OTP detected. Subject: {latest_subject}"
