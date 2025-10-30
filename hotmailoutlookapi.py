@@ -15,6 +15,8 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
+from functions.facebook import get_latest_facebook_otp
+
 # ----------------------------------------------------
 # 🔧 CONFIGURATION (env vars preferred)
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
@@ -167,7 +169,11 @@ def fetch_inbox_preview(
 
     imap = connect_and_authenticate(email_addr, access_token)
     try:
-        inbox_text = list_latest_messages(imap, n=message_count)
+        # ``message_count`` is kept for backwards compatibility with earlier
+        # behaviour that listed multiple emails. The bot now focuses on the
+        # latest Facebook OTP message only.
+        del message_count
+        inbox_text = get_latest_facebook_otp(imap)
     finally:
         imap.logout()
 
