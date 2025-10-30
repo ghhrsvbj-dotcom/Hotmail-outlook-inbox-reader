@@ -1,5 +1,6 @@
 import asyncio
 import email
+import html
 import imaplib
 import os
 import re
@@ -221,8 +222,10 @@ async def handle_credentials(message: Message) -> None:
         await message.answer(f"❌ Error: {exc}")
         return
 
+    safe_email = html.escape(creds["email"])
+    safe_preview = html.escape(preview_text)
     await message.answer(
-        f"✅ Parsed credentials for {creds['email']}.\n\n{preview_text}",
+        f"✅ Parsed credentials for {safe_email}.\n\n{safe_preview}",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True,
     )
