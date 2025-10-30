@@ -9,6 +9,8 @@ import re
 from email.message import Message
 from typing import Optional
 
+from .ignored_otp import IGNORED_OTPS
+
 _FB_CODE_PATTERN = re.compile(r"\b(?:FB-)?(\d{4,8})\b")
 
 
@@ -19,11 +21,20 @@ def _extract_otp(text: str) -> Optional[str]:
     if not matches:
         return None
 
-    for match in matches:
-        if match.group(0).startswith("FB-"):
-            return match.group(1)
+    first_candidate: Optional[str] = None
 
-    return matches[0].group(1)
+    for match in matches:
+        candidate = match.group(1)
+        if candidate in IGNORED_OTPS:
+            continue
+
+        if match.group(0).startswith("FB-"):
+            return candidate
+
+        if first_candidate is None:
+            first_candidate = candidate
+
+    return first_candidate
 
 
 def _decode_header_value(raw_value: Optional[str]) -> str:
