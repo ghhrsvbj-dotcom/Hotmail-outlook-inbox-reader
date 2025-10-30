@@ -192,8 +192,8 @@ def _parse_credentials(raw: Optional[str]) -> Optional[Dict[str, str]]:
 @router.message(CommandStart())
 async def handle_start(message: Message) -> None:
     await message.answer(
-        "Send the account string in the format:<br>"
-        "<code>email|password|refresh_token|client_id</code><br><br>"
+        "Send the account string in the format:\n"
+        "<code>email|password|refresh_token|client_id</code>\n\n"
         "Only Hotmail/Outlook addresses are accepted.",
         parse_mode=ParseMode.HTML,
     )
