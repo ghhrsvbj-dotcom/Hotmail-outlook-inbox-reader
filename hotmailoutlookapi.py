@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 import uvloop
-from aiogram import Bot, Dispatcher, F
+from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
@@ -173,6 +173,23 @@ def fetch_inbox_preview(
     return inbox_text
 
 
+router = Router()
+
+
+def _parse_credentials(raw: Optional[str]) -> Optional[Dict[str, str]]:
+    if not raw:
+        return None
+    match = DATA_PATTERN.search(raw.strip())
+    if not match:
+        return None
+    return {
+        "email": match.group("email"),
+        "refresh": match.group("refresh"),
+        "client": match.group("client"),
+    }
+
+
+@router.message(CommandStart())
 async def handle_start(message: Message) -> None:
     await message.answer(
         "Send the account string in the format:\n"
@@ -182,26 +199,22 @@ async def handle_start(message: Message) -> None:
     )
 
 
+@router.message(F.text)
 async def handle_credentials(message: Message) -> None:
-    text = message.text or ""
-    match = DATA_PATTERN.search(text.strip())
-    if not match:
+    creds = _parse_credentials(message.text)
+    if not creds:
         await message.answer(
             "❌ Unable to parse credentials. Ensure the format is "
             "email|password|refresh_token|client_id and the email is Hotmail/Outlook."
         )
         return
 
-    email_addr = match.group("email")
-    refresh_token = match.group("refresh")
-    client_id = match.group("client")
-
     try:
         preview_text = await asyncio.to_thread(
             fetch_inbox_preview,
-            email_addr,
-            refresh_token,
-            client_id,
+            creds["email"],
+            creds["refresh"],
+            creds["client"],
             message_count=DEFAULT_MESSAGE_COUNT,
         )
     except Exception as exc:  # noqa: BLE001 - deliver full context to the user
@@ -209,7 +222,7 @@ async def handle_credentials(message: Message) -> None:
         return
 
     await message.answer(
-        f"✅ Parsed credentials for {email_addr}.\n\n{preview_text}",
+        f"✅ Parsed credentials for {creds['email']}.\n\n{preview_text}",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True,
     )
@@ -221,8 +234,7 @@ async def run_bot() -> None:
 
     bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
-    dp.message.register(handle_start, CommandStart())
-    dp.message.register(handle_credentials, F.text)
+    dp.include_router(router)
 
     await dp.start_polling(bot)
 
