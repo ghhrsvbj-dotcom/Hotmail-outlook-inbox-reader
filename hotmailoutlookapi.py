@@ -8,7 +8,6 @@ from email.header import decode_header, make_header
 from typing import Any, Dict, Optional
 
 import httpx
-import uvloop
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart
@@ -240,5 +239,4 @@ async def run_bot() -> None:
 
 
 if __name__ == "__main__":
-    uvloop.install()
     asyncio.run(run_bot())
