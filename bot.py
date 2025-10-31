@@ -21,7 +21,7 @@ from Api.edu import fetch_inbox_summary, format_summary
 from Api.hotmailoutlookapi import fetch_inbox_preview
 from commands import broadcast_router, start_router
 
-TELEGRAM_BOT_TOKEN = "8213966935:AAGzXbDk1JGlTj2FH-ihho6DP0zcXo2Dkyg"
+TELEGRAM_BOT_TOKEN = "8293805278:AAGSEFsHqUPu5AGG7Rjhy430bqd2xzGsWZw"
 DEFAULT_MESSAGE_COUNT = int(os.getenv("MESSAGE_COUNT", "40"))
 
 DATA_PATTERN = re.compile(
