@@ -4,6 +4,7 @@ import asyncio
 import html
 import os
 import re
+from functools import partial
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -16,6 +17,7 @@ from aiogram.types import (
     Message,
 )
 
+from Api.edu import fetch_inbox_summary, format_summary
 from Api.hotmailoutlookapi import fetch_inbox_preview
 from commands import broadcast_router, start_router
 
@@ -27,6 +29,10 @@ DATA_PATTERN = re.compile(
     r"(?P<password>[^|]*)\|"
     r"(?P<refresh>M\.[^|]+)\|"
     r"(?P<client>[0-9a-fA-F-]{36})"
+)
+
+EDU_PATTERN = re.compile(
+    r"^(?P<email>[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+)\|(?P<password>[^|\s]+)\s*$"
 )
 
 router = Router()
@@ -61,7 +67,50 @@ def _format_timestamp(value: Optional[datetime]) -> str:
 # those messages.
 @router.message(F.text & ~F.text.startswith("/"))
 async def handle_credentials(message: Message) -> None:
-    creds = _parse_credentials(message.text)
+    text = (message.text or "").strip()
+
+    edu_match = EDU_PATTERN.fullmatch(text)
+    if edu_match:
+        email = edu_match.group("email")
+        password = edu_match.group("password")
+        loop = asyncio.get_running_loop()
+        try:
+            summary = await loop.run_in_executor(
+                None,
+                partial(fetch_inbox_summary, email, password=password),
+            )
+            summary_data = format_summary(summary)
+            codes = summary_data.get("codes", [])
+            duration = summary_data.get("duration")
+            errors = summary_data.get("errors", [])
+
+            if codes:
+                code_lines = "\n".join(
+                    f"Facebook confirmation code : <code>{html.escape(str(code))}</code>"
+                    for code in codes
+                )
+                time_text = (
+                    f"Time : {duration:.2f}s" if duration is not None else "Time : N/A"
+                )
+                message_text = (
+                    "✨OTP FOUND  ✨\n\n"
+                    f"{code_lines}\n\n"
+                    f"{html.escape(time_text)}"
+                )
+                await message.answer(message_text, parse_mode=ParseMode.HTML)
+            elif errors:
+                warnings = "\n".join(f"- {error}" for error in errors)
+                await message.answer(
+                    "No Facebook confirmation codes were found.\n\n"
+                    f"Warnings:\n{warnings}"
+                )
+            else:
+                await message.answer("No Facebook confirmation codes were found.")
+        except Exception as exc:  # pragma: no cover - network/Playwright errors
+            await message.answer(f"An error occurred while fetching the inbox: {exc}")
+        return
+
+    creds = _parse_credentials(text)
     if not creds:
         await message.answer(
             "❌ Unable to parse credentials. Ensure the format is "
