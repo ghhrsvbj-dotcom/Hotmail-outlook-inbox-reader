@@ -1,17 +1,29 @@
 """Utilities for extracting OTP codes from Facebook emails."""
+
 from __future__ import annotations
+
 import email
 import html
 import imaplib
 import re
-from email.message import Message
-from typing import Optional
 from datetime import datetime
+from email.message import Message
 from email.utils import parsedate_to_datetime
+from typing import Literal, Optional, TypedDict
 from .ignored_otp import IGNORED_OTPS
 
 _FB_CODE_WITH_PREFIX = re.compile(r"FB-(\d{5,8})\b")
 _FB_CODE_STANDALONE = re.compile(r"\b(\d{5,8})\b")
+
+
+class FacebookOtpResult(TypedDict, total=False):
+    """Structured information about the latest Facebook OTP email."""
+
+    status: Literal["found", "no_otp", "no_emails"]
+    otp: Optional[str]
+    subject: Optional[str]
+    received_at: Optional[datetime]
+
 
 def _extract_otp(text: str) -> Optional[str]:
     """Return the first plausible OTP code from the provided text."""
@@ -114,57 +126,66 @@ def _get_message_date(msg: Message) -> Optional[datetime]:
     except (TypeError, ValueError):
         return None
 
-def get_latest_facebook_otp(imap: imaplib.IMAP4_SSL, *, max_messages: int = 20) -> str:
-    """Return the most recent OTP code from Facebook emails within the provided window."""
+def get_latest_facebook_otp(
+    imap: imaplib.IMAP4_SSL, *, max_messages: int = 20
+) -> FacebookOtpResult:
+    """Return the newest Facebook OTP email (if present) within the provided window."""
+
     status, _ = imap.select("INBOX")
     if status != "OK":
         raise RuntimeError("Failed to open INBOX")
-    
+
     status, data = imap.search(None, 'FROM', '"Facebook"')
     if status != "OK" or not data or not data[0]:
-        return "No Facebook OTP emails found."
-    
+        return {
+            "status": "no_emails",
+            "otp": None,
+            "subject": None,
+            "received_at": None,
+        }
+
     message_ids = [msg_id for msg_id in data[0].split() if msg_id]
     if not message_ids:
-        return "No Facebook OTP emails found."
-    
-    # Take the most recent message IDs
+        return {
+            "status": "no_emails",
+            "otp": None,
+            "subject": None,
+            "received_at": None,
+        }
+
     recent_message_ids = message_ids[-max_messages:]
-    
-    # Store all OTPs with their dates
-    otp_entries = []
-    latest_subject = "(no subject)"
-    
-    for msg_id in recent_message_ids:
+    latest_subject: Optional[str] = None
+
+    for msg_id in reversed(recent_message_ids):
         status, msg_data = imap.fetch(msg_id, "(RFC822)")
         if status != "OK" or not msg_data or not msg_data[0]:
             continue
-        
+
         raw_email = msg_data[0][1]
         msg = email.message_from_bytes(raw_email)
-        
+
         subject = _decode_header_value(msg.get("Subject")) or "(no subject)"
         message_date = _get_message_date(msg)
-        
-        if latest_subject == "(no subject)":
+
+        if latest_subject is None:
             latest_subject = subject
-        
-        # Try subject first (more reliable for FB codes)
+
         otp = _extract_otp(subject)
         if not otp:
             body_text = _message_to_text(msg)
             otp = _extract_otp(body_text)
-        
-        if otp and message_date:
-            otp_entries.append({
-                'otp': otp,
-                'date': message_date,
-                'subject': subject
-            })
-    
-    # Sort by date (newest first) and return the most recent OTP
-    if otp_entries:
-        otp_entries.sort(key=lambda x: x['date'], reverse=True)
-        return f"Latest Facebook OTP: {otp_entries[0]['otp']}"
-    
-    return f"Latest Facebook email found but no OTP detected. Subject: {latest_subject}"
+
+        if otp:
+            return {
+                "status": "found",
+                "otp": otp,
+                "subject": subject,
+                "received_at": message_date,
+            }
+
+    return {
+        "status": "no_otp",
+        "otp": None,
+        "subject": latest_subject,
+        "received_at": None,
+    }

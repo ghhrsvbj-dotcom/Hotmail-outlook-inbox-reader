@@ -143,9 +143,10 @@ def list_latest_messages(imap: imaplib.IMAP4_SSL, n: int = 10) -> str:
 
 def fetch_inbox_preview(
     email_addr: str, refresh_token: str, client_id: str, *, message_count: int
-) -> str:
-    """Fetch the most recent Facebook OTP message for the provided inbox."""
+) -> Dict[str, Any]:
+    """Fetch structured information about the latest Facebook OTP for the inbox."""
 
+    start_time = time.perf_counter()
     token_data = get_access_token(refresh_token, client_id, CLIENT_SECRET)
     access_token = token_data.get("access_token")
     if not access_token:
@@ -153,11 +154,13 @@ def fetch_inbox_preview(
 
     imap = connect_and_authenticate(email_addr, access_token)
     try:
-        inbox_text = get_latest_facebook_otp(
+        result = get_latest_facebook_otp(
             imap,
             max_messages=max(1, message_count),
         )
     finally:
         imap.logout()
 
-    return inbox_text
+    result = dict(result)
+    result["elapsed_seconds"] = time.perf_counter() - start_time
+    return result
