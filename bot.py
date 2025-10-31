@@ -10,7 +10,6 @@ from typing import Dict, Optional
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums.parse_mode import ParseMode
-from aiogram.filters import CommandStart
 from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -18,6 +17,7 @@ from aiogram.types import (
 )
 
 from Api.hotmailoutlookapi import fetch_inbox_preview
+from commands import start_router
 
 TELEGRAM_BOT_TOKEN = "8213966935:AAGzXbDk1JGlTj2FH-ihho6DP0zcXo2Dkyg"
 DEFAULT_MESSAGE_COUNT = int(os.getenv("MESSAGE_COUNT", "40"))
@@ -30,6 +30,7 @@ DATA_PATTERN = re.compile(
 )
 
 router = Router()
+router.include_router(start_router)
 
 
 def _parse_credentials(raw: Optional[str]) -> Optional[Dict[str, str]]:
@@ -52,15 +53,6 @@ def _format_timestamp(value: Optional[datetime]) -> str:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
-
-@router.message(CommandStart())
-async def handle_start(message: Message) -> None:
-    await message.answer(
-        "Send the account string in the format:\n"
-        "<code>email|password|refresh_token|client_id</code>\n\n"
-        "Only Hotmail/Outlook addresses are accepted.",
-        parse_mode=ParseMode.HTML,
-    )
 
 
 @router.message(F.text)
