@@ -35,7 +35,7 @@ async def handle_start(message: Message) -> None:
         ]
     )
 
-    await message.answer(
+    await message.reply(
         "🌐 Choose your language\n"
         "Please pick how you'd like to use the bot.",
         reply_markup=keyboard,
