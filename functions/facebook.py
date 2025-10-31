@@ -17,24 +17,19 @@ _FB_CODE_PATTERN = re.compile(r"\b(?:FB-)?(\d{4,8})\b")
 def _extract_otp(text: str) -> Optional[str]:
     """Return the first plausible OTP code from the provided text."""
 
-    matches = list(_FB_CODE_PATTERN.finditer(text))
+    matches = [match for match in _FB_CODE_PATTERN.finditer(text)]
     if not matches:
         return None
 
-    first_candidate: Optional[str] = None
+    valid_matches = [match for match in matches if match.group(1) not in IGNORED_OTPS]
+    if not valid_matches:
+        return None
 
-    for match in matches:
-        candidate = match.group(1)
-        if candidate in IGNORED_OTPS:
-            continue
-
+    for match in reversed(valid_matches):
         if match.group(0).startswith("FB-"):
-            return candidate
+            return match.group(1)
 
-        if first_candidate is None:
-            first_candidate = candidate
-
-    return first_candidate
+    return valid_matches[-1].group(1)
 
 
 def _decode_header_value(raw_value: Optional[str]) -> str:
