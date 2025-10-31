@@ -55,7 +55,10 @@ def _format_timestamp(value: Optional[datetime]) -> str:
 
 
 
-@router.message(F.text)
+# Ignore any command-style messages (e.g. `/start`) so they aren't treated as
+# credential submissions. The dedicated command handlers will take care of
+# those messages.
+@router.message(F.text & ~F.text.startswith("/"))
 async def handle_credentials(message: Message) -> None:
     creds = _parse_credentials(message.text)
     if not creds:
