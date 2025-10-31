@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
@@ -18,6 +18,40 @@ _DEFAULT_MONGO_URI = (
 )
 
 
+def _should_allow_invalid_certs() -> bool:
+    """Return whether TLS certificate validation should be skipped."""
+
+    value = os.getenv("MONGODB_TLS_ALLOW_INVALID_CERTS")
+    if value is None:
+        return False
+
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _resolve_tls_kwargs() -> Dict[str, Any]:
+    """Return TLS keyword arguments for Motor client initialisation."""
+
+    tls_kwargs: Dict[str, Any] = {}
+
+    if _should_allow_invalid_certs():
+        tls_kwargs["tlsAllowInvalidCertificates"] = True
+        return tls_kwargs
+
+    ca_file = os.getenv("MONGODB_TLS_CA_FILE")
+    if not ca_file:
+        try:
+            import certifi
+        except Exception:  # pragma: no cover - optional dependency
+            pass
+        else:
+            ca_file = certifi.where()
+
+    if ca_file:
+        tls_kwargs["tlsCAFile"] = ca_file
+
+    return tls_kwargs
+
+
 def _get_client() -> AsyncIOMotorClient:
     """Return a cached Motor client instance using the configured URI."""
 
@@ -26,8 +60,9 @@ def _get_client() -> AsyncIOMotorClient:
         return _MONGO_CLIENT
 
     mongo_uri = os.getenv("MONGODB_URI", _DEFAULT_MONGO_URI)
+    tls_kwargs = _resolve_tls_kwargs()
 
-    _MONGO_CLIENT = AsyncIOMotorClient(mongo_uri)
+    _MONGO_CLIENT = AsyncIOMotorClient(mongo_uri, **tls_kwargs)
     return _MONGO_CLIENT
 
 
