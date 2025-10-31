@@ -21,9 +21,9 @@ def _extract_otp(text: str) -> Optional[str]:
     if not matches:
         return None
 
-    first_candidate: Optional[str] = None
+    latest_candidate: Optional[str] = None
 
-    for match in matches:
+    for match in reversed(matches):
         candidate = match.group(1)
         if candidate in IGNORED_OTPS:
             continue
@@ -31,10 +31,10 @@ def _extract_otp(text: str) -> Optional[str]:
         if match.group(0).startswith("FB-"):
             return candidate
 
-        if first_candidate is None:
-            first_candidate = candidate
+        if latest_candidate is None:
+            latest_candidate = candidate
 
-    return first_candidate
+    return latest_candidate
 
 
 def _decode_header_value(raw_value: Optional[str]) -> str:
