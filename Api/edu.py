@@ -1,8 +1,8 @@
 """Utilities for scraping Gmail with Playwright.
 
-This module exposes a helper function that logs into Gmail using a fixed
-password and returns a short summary of the inbox contents.  It is primarily
-intended to be used by the Telegram bot defined in :mod:`bot`.
+This module exposes a helper function that logs into Gmail using the password
+provided by the end user and returns a short summary of the inbox contents. It
+is primarily intended to be used by the Telegram bot defined in :mod:`bot`.
 """
 
 from __future__ import annotations
@@ -13,10 +13,6 @@ import time
 from typing import Any, Dict, List
 
 from playwright.sync_api import Page, TimeoutError, sync_playwright
-
-# Gmail credentials.  The password is fixed while the email is provided by the
-# end user through the Telegram bot.
-PASSWORD = "Nxnt3979"
 
 URL = (
     "https://accounts.google.com/v3/signin/identifier?"
@@ -68,7 +64,7 @@ def _safe_inner_text(element) -> str:
 def fetch_inbox_summary(
     email: str,
     *,
-    password: str = PASSWORD,
+    password: str,
     max_rows: int = 10,
     headless: bool = True,
 ) -> Dict[str, Any]:
@@ -77,10 +73,9 @@ def fetch_inbox_summary(
     Parameters
     ----------
     email:
-        The Gmail address to authenticate with.  The password is fixed and
-        provided via :data:`PASSWORD`.
+        The Gmail address to authenticate with.
     password:
-        Optionally override the password for the login attempt.
+        The password supplied by the user for the login attempt.
     max_rows:
         The maximum number of inbox rows to capture.
     headless:
@@ -256,10 +251,11 @@ def format_summary(summary: Dict[str, Any]) -> Dict[str, Any]:
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) < 2:
-        print("Usage: python edu.py <email>")
+    if len(sys.argv) < 3:
+        print("Usage: python edu.py <email> <password>")
         sys.exit(1)
 
     email_address = sys.argv[1]
-    summary = fetch_inbox_summary(email_address, headless=False)
+    email_password = sys.argv[2]
+    summary = fetch_inbox_summary(email_address, password=email_password, headless=False)
     print(json.dumps(summary, indent=2, ensure_ascii=False))
