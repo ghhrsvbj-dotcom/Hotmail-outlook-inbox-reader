@@ -17,7 +17,7 @@ from aiogram.types import (
 )
 
 from Api.hotmailoutlookapi import fetch_inbox_preview
-from commands import start_router
+from commands import broadcast_router, start_router
 
 TELEGRAM_BOT_TOKEN = "8213966935:AAGzXbDk1JGlTj2FH-ihho6DP0zcXo2Dkyg"
 DEFAULT_MESSAGE_COUNT = int(os.getenv("MESSAGE_COUNT", "40"))
@@ -31,6 +31,7 @@ DATA_PATTERN = re.compile(
 
 router = Router()
 router.include_router(start_router)
+router.include_router(broadcast_router)
 
 
 def _parse_credentials(raw: Optional[str]) -> Optional[Dict[str, str]]:
