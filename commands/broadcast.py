@@ -41,7 +41,10 @@ async def handle_broadcast(message: Message) -> None:
 
     broadcast_text = _extract_broadcast_text(message)
     if not broadcast_text:
-        await message.answer("Usage: /brd <message to broadcast>")
+        await message.answer(
+            "Usage: /brd your-message-here\n"
+            "Example: /brd The service will be down for maintenance tonight."
+        )
         return
 
     user_ids: List[int] = await get_all_user_ids()
@@ -56,7 +59,7 @@ async def handle_broadcast(message: Message) -> None:
 
     for user_id in recipients:
         try:
-            await message.bot.send_message(user_id, broadcast_text)
+            await message.bot.send_message(user_id, broadcast_text, parse_mode=None)
         except Exception as exc:  # pragma: no cover - runtime delivery issues
             failed += 1
             logger.warning("Failed to deliver broadcast to %s: %s", user_id, exc)
