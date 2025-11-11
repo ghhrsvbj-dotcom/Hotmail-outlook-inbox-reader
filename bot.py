@@ -87,11 +87,11 @@ async def handle_credentials(message: Message) -> None:
                 await asyncio.sleep(1.5)
                 if summary_future.done():
                     break
-                await progress_message.edit_text("Working... ⚙️")
+                await progress_message.edit_text("Working... 🟩")
                 await asyncio.sleep(1.5)
                 if summary_future.done():
                     break
-                await progress_message.edit_text("Working... ⏳")
+                await progress_message.edit_text("Working... 🟩🟩⬜")
 
             summary = await summary_future
             await progress_message.edit_text("Done! ✅")
