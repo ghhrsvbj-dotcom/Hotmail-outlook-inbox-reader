@@ -74,11 +74,27 @@ async def handle_credentials(message: Message) -> None:
         email = edu_match.group("email")
         password = edu_match.group("password")
         loop = asyncio.get_running_loop()
+        progress_message = await message.answer("Starting Gmail fetch... ⌛")
         try:
-            summary = await loop.run_in_executor(
+            summary_future = loop.run_in_executor(
                 None,
                 partial(fetch_inbox_summary, email, password=password),
             )
+
+            for _ in range(5):
+                if summary_future.done():
+                    break
+                await asyncio.sleep(1.5)
+                if summary_future.done():
+                    break
+                await progress_message.edit_text("Working... ⚙️")
+                await asyncio.sleep(1.5)
+                if summary_future.done():
+                    break
+                await progress_message.edit_text("Working... ⏳")
+
+            summary = await summary_future
+            await progress_message.edit_text("Done! ✅")
             summary_data = format_summary(summary)
             codes = summary_data.get("codes", [])
             duration = summary_data.get("duration")
@@ -97,17 +113,19 @@ async def handle_credentials(message: Message) -> None:
                     f"{code_lines}\n\n"
                     f"{html.escape(time_text)}"
                 )
-                await message.answer(message_text, parse_mode=ParseMode.HTML)
+                await progress_message.edit_text(message_text, parse_mode=ParseMode.HTML)
             elif errors:
                 warnings = "\n".join(f"- {error}" for error in errors)
-                await message.answer(
+                await progress_message.edit_text(
                     "No Facebook confirmation codes were found.\n\n"
                     f"Warnings:\n{warnings}"
                 )
             else:
-                await message.answer("No Facebook confirmation codes were found.")
+                await progress_message.edit_text("No Facebook confirmation codes were found.")
         except Exception as exc:  # pragma: no cover - network/Playwright errors
-            await message.answer(f"An error occurred while fetching the inbox: {exc}")
+            await progress_message.edit_text(
+                f"An error occurred while fetching the inbox: {exc}"
+            )
         return
 
     creds = _parse_credentials(text)
