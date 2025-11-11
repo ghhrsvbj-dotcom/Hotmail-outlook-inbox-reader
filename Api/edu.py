@@ -22,10 +22,12 @@ URL = (
 )
 
 
-def _click_optional_confirm(page: Page) -> bool:
+def _click_optional_confirm(page: Page, *, timeout_ms: int = 5000) -> bool:
     """Attempt to click any optional confirmation prompt.
 
     Returns ``True`` when a confirmation element was located and clicked.
+    The helper waits at most ``timeout_ms`` milliseconds in total while
+    searching through the known selectors.
     """
 
     selectors = [
@@ -34,9 +36,13 @@ def _click_optional_confirm(page: Page) -> bool:
         'input[type="submit"][value="আমি বুঝেছি"]',
         'input[type="submit"]',
     ]
+    deadline = time.perf_counter() + (timeout_ms / 1000)
     for selector in selectors:
+        remaining_ms = int(max((deadline - time.perf_counter()) * 1000, 0))
+        if remaining_ms <= 0:
+            break
         try:
-            element = page.wait_for_selector(selector, timeout=3000)
+            element = page.wait_for_selector(selector, timeout=remaining_ms)
         except TimeoutError:
             continue
 
@@ -127,10 +133,10 @@ def fetch_inbox_summary(
 
             try:
                 result["confirm_clicked"] = _click_optional_confirm(page)
-                if result["confirm_clicked"]:
-                    page.goto("https://mail.google.com/mail/u/0/#inbox", timeout=60000)
             except Exception as exc:  # pragma: no cover - best effort to continue
                 result["errors"].append(f"Failed to interact with confirm dialog: {exc}")
+            if not result["confirm_clicked"]:
+                page.goto("https://mail.google.com/mail/u/0/#inbox", timeout=60000)
 
             try:
                 page.wait_for_url(lambda url: "mail.google.com" in url, timeout=60000)
