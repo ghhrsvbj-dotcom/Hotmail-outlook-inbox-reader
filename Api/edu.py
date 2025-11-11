@@ -128,7 +128,7 @@ def fetch_inbox_summary(
             try:
                 result["confirm_clicked"] = _click_optional_confirm(page)
                 if result["confirm_clicked"]:
-                    page.wait_for_timeout(1500)
+                    page.goto("https://mail.google.com/mail/u/0/#inbox", timeout=60000)
             except Exception as exc:  # pragma: no cover - best effort to continue
                 result["errors"].append(f"Failed to interact with confirm dialog: {exc}")
 
