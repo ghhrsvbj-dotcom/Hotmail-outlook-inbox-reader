@@ -1,0 +1,21 @@
+{
+  "name": "hotmail-outlook-inbox-reader",
+  "version": "1.0.0",
+  "description": "Telegram bot that fetches Facebook OTP codes from Hotmail/Outlook inboxes and Gmail using Node.js",
+  "main": "src/bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.44.0",
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "escape-html": "^1.0.3",
+    "he": "^1.2.0",
+    "mailparser": "^3.9.0",
+    "imapflow": "^1.0.124",
+    "mongodb": "^6.7.0",
+    "telegraf": "^4.16.3"
+  }
+}
