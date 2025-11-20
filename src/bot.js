@@ -8,7 +8,7 @@ import { fetchInboxSummary, formatSummary } from "./Api/edu.js";
 
 dotenv.config();
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_BOT_TOKEN = "8293805278:AAGSEFsHqUPu5AGG7Rjhy430bqd2xzGsWZw";
 const DEFAULT_MESSAGE_COUNT = parseInt(process.env.MESSAGE_COUNT || "40", 10);
 
 const DATA_PATTERN = /(?<email>[A-Za-z0-9._%+-]+@(hotmail|outlook)\.[A-Za-z0-9.-]+)\|(?<password>[^|]*)\|(?<refresh>M\.[^|]+)\|(?<client>[0-9a-fA-F-]{36})/;
