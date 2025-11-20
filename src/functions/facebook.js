@@ -1,4 +1,4 @@
-import { decode as decodeHtml } from "he";
+import he from "he";
 import { IGNORED_OTPS } from "./ignoredOtp.js";
 
 const FB_CODE_WITH_PREFIX = /FB-(\d{5,8})\b/g;
@@ -44,7 +44,7 @@ function extractOtp(text = "") {
 function messageToText(msg) {
   if (!msg) return "";
   if (msg.text) return msg.text;
-  if (msg.html) return decodeHtml(msg.html);
+  if (msg.html) return he.decode(msg.html);
   return "";
 }
 
