@@ -68,7 +68,7 @@ export async function fetchInboxSummary(email, { password, maxRows = 10, headles
       await page.goto("https://mail.google.com/mail/u/0/#inbox", { timeout: 60000 });
     }
 
-    await page.waitForURL((url) => url.includes("mail.google.com"), { timeout: 60000 });
+    await page.waitForURL((url) => url.toString().includes("mail.google.com"), { timeout: 60000 });
     await page.waitForSelector("tr.zA", { timeout: 30000 });
 
     const rows = await page.$$("tr.zA");
