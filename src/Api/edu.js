@@ -56,6 +56,8 @@ export async function fetchInboxSummary(email, { password, maxRows = 10, headles
     await page.waitForSelector('input[name="Passwd"]', { timeout: 20000 });
     await page.fill('input[name="Passwd"]', password);
     await page.click("#passwordNext");
+	await page.waitForTimeout(3000); // wait 3 seconds
+
 
     try {
       result.confirm_clicked = await clickOptionalConfirm(page);
